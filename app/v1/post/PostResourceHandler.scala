@@ -38,7 +38,6 @@ class PostResourceHandler @Inject()(
 
   def create(postInput: PostFormInput)(implicit mc: MarkerContext): Future[PostResource] = {
     val data = PostData(PostId("999"), postInput.title, postInput.body)
-    // We don't actually create the post, so return what we have
     postRepository.create(data).map { id =>
       createPostResource(data)
     }
