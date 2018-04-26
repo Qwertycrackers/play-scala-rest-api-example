@@ -7,7 +7,7 @@ import play.api.libs.json._
 import play.api.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class GoofyController @Inject()(repo: GoofyRepo) extends Controller { // I'm still uncertain why injecting the Repo is better than instantiating it.
+class GoofyController @Inject()(repo: GoofyRepo) extends Controller { 
     private val logger = Logger(getClass) // not certain how getClass works but I want to log things
 
     implicit val implicitJsInt = new Writes[Int] {
