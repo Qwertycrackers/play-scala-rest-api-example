@@ -8,8 +8,6 @@ import scala.collection.mutable.Set // Everyone likes immutable stuff but I actu
 import scala.colection.mutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
 
-// We'll pretend this does heavy processing and use a custom thread pool. Idk what "repository.dispatcher" does, and the documentation is not helping.
-// I'm just going to hope leaving it this way causes no major problems.
 class GoofyExecutionContext @Inject()(actorSystem: ActorSystem) extends CustomExecutionContext(actorSystem, "repository.dispatcher")
 
 // Interface for my goofy backend, which is not a Set anymore
@@ -33,23 +31,28 @@ class GoofyRepoImpl @Inject()(implicit ec: GoofyExecutionContext) extends GoofyR
     // I was going to use fancy pattern-matching for this, but research suggested if/else was better if you don't already have Options
     override def add(id: Int, num: Int): Future[Option[Int]] =  {
         Future {
-                if(gaffs.contains(id)) { // check if the set they want already exists
-                    if(gaffs(id).contains(num)) {
-                        None // if the number is already in, return None
-                    } else {
-                        gaffs += num // add the num in
+            if(gaffs.contains(id)) { // check if the set they want already exists
+                val set = gaffs(id);
+                if(set.contains(num)) {
+                    None // if the number is already in, return None
+                } else {
+                    set += num // add the num in
                         Some(num) // return it, signaling it was added
-                    }
-                } else { // if the Set isn't in there already
-                    gaffs += (id -> new Set(num)) // add the id as a key pointing to a new set
-                    Some(num)
                 }
+            } else { // if the Set isn't in there already
+                gaffs += (id -> new Set(num)) // add the id as a key pointing to a new set
+                    Some(num)
             }
         }
+    }
     
-    override def get(num: Int): Future[Option[Int]] = {
+    override def get(id: Int, num: Int): Future[Option[Int]] = {
         Future {
-            if(gaffs(num)) { Some(num) } else { None } // tell if the num was in there
+            if(gaffs.contains(id) && gaffs(id)(num)) {
+                Some(num)
+            } else {
+                None
+            }
         }
     }
 }
