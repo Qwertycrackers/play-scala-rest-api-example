@@ -57,4 +57,7 @@ class GoofyRepoImpl @Inject()(implicit ec: GoofyExecutionContext) extends GoofyR
     }
 }
 
-        
+@Singleton
+class GoofyRepoSQL @Inject()(implicit ec: GoofExecutionContext) extends GoofyRepo {
+    implicit val unstringify: String => Option[BitSet] = s => {
+        -
