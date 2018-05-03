@@ -23,6 +23,7 @@ libraryDependencies += "io.gatling.highcharts" % "gatling-charts-highcharts" % g
 libraryDependencies += "io.gatling" % "gatling-test-framework" % gatlingVersion(scalaBinaryVersion.value) % Test
 
 libraryDependencies += jdbc
+libraryDependencies += "com.typesafe.play" %% "anorm" % "2.5.1"
 
 // The Play project itself
 lazy val root = (project in file("."))

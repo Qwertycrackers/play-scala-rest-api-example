@@ -8,6 +8,7 @@ import scala.collection.mutable.Set // Everyone likes immutable stuff but I actu
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
+import anorm._
 
 class GoofyExecutionContext @Inject()(actorSystem: ActorSystem) extends CustomExecutionContext(actorSystem, "repository.dispatcher")
 
@@ -57,7 +58,25 @@ class GoofyRepoImpl @Inject()(implicit ec: GoofyExecutionContext) extends GoofyR
     }
 }
 
+/* Persistent implementation of GoofyRepo. 
+ * After consideration, I've decided to store the data in a two-column table of Set IDs and the stringification of their values. If the values had an upper bound I would use a finite number of Longs
+ */
 @Singleton
-class GoofyRepoSQL @Inject()(implicit ec: GoofExecutionContext) extends GoofyRepo {
-    implicit val unstringify: String => Option[BitSet] = s => {
-        -
+class GoofyRepoSQL @Inject()(db: DataBase, implicit ec: GoofyExecutionContext) extends GoofyRepo {
+    // Implicit converter to turn the strings from the database into BitSets for manipulation. Not always used implicitly
+    implicit val unstringify: String => BitSet = s => {
+        val nums = s.split(" ").map(_.toInt) // Numbers in string as array
+        BitSet.empty ++ nums
+    }
+
+    protected def getSet(id: Int): BitSet = {
+        db.withConnection {
+            val str: String = SQL"""
+                select set from sets where id=$id
+                """.as(SQLParser.str("set").single)
+        }
+        unstringify(str) 
+    }
+
+    override def list(id: Int): Future[Iterable[Int]] {
+                
