@@ -22,8 +22,8 @@ libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2
 libraryDependencies += "io.gatling.highcharts" % "gatling-charts-highcharts" % gatlingVersion(scalaBinaryVersion.value) % Test
 libraryDependencies += "io.gatling" % "gatling-test-framework" % gatlingVersion(scalaBinaryVersion.value) % Test
 
-libraryDependencies += jdbc
-libraryDependencies += "com.typesafe.play" %% "anorm" % "2.5.1"
+libraryDependencies ++= Seq(jdbc, "org.playframework.anorm" %% "anorm" % "2.6.0")
+libraryDependencies += "com.h2database" % "h2" % "1.4.192"
 
 // The Play project itself
 lazy val root = (project in file("."))

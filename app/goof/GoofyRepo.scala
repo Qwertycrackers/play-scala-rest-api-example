@@ -8,6 +8,7 @@ import scala.collection.mutable.Set // Everyone likes immutable stuff but I actu
 import scala.collection.mutable.BitSet
 import scala.collection.mutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.db._
 import anorm._
 
 // As it turns out, using the repository dispatcher again is probably a good idea
@@ -63,24 +64,24 @@ class GoofyRepoImpl @Inject()(implicit ec: GoofyExecutionContext) extends GoofyR
  * After consideration, I've decided to store the data in a two-column table of Set IDs and the stringification of their values. If the values had an upper bound I would use a finite number of Longs
  */
 @Singleton
-class GoofyRepoSQL @Inject()(db: DataBase, implicit ec: GoofyExecutionContext) extends GoofyRepo {
+class GoofyRepoSQL @Inject()(val db: Database, implicit val ec: GoofyExecutionContext) extends GoofyRepo {
     // Implicit converter to turn the strings from the database into BitSets for manipulation. Not always used implicitly
     implicit val unstringify: String => BitSet = s => {
         val nums = s.split(" ").map(_.toInt) // Numbers in string as array
         BitSet.empty ++ nums
     }
 
-    private def stringify(set: Set): String = {
-       set,mkstring(" ")
+    private def stringify(set: BitSet): String = {
+       set.mkString(" ")
     } 
 
     protected def getSet(id: Int): Option[BitSet] = {
-        db.withConnection {
-            val str: Option[String] = SQL"""
-                select nums from sets where id=$id
-                """.as(SQLParser.str("nums").singleOpt)
+        val strOpt: Option[String] = db.withConnection { implicit conn =>
+            SQL"""
+            select nums from sets where id=$id
+            """.as(SqlParser.str("nums").singleOpt)
         }
-        str.map(unstringify(_)) // May have problematic type issues where the None[String] doesn't map into a None[BitSet], but I think None does not have a type
+        strOpt.map(unstringify(_)) // May have problematic type issues where the None[String] doesn't map into a None[BitSet], but I think None does not have a type
     }
 
     override def list(id: Int): Future[Iterable[Int]] = {
@@ -94,20 +95,20 @@ class GoofyRepoSQL @Inject()(db: DataBase, implicit ec: GoofyExecutionContext) e
 
     override def add(id: Int, num: Int): Future[Option[Int]] = {
         Future {
-            getSet(id).map( _ match {
+            getSet(id) match {
                 case Some(set) => 
                     if(set(num)) {
                         None // If the number is there, we don't add it
                     } else {
                         val str = stringify(set + num)
-                        db.withConnection {
-                            SQL""" update sets set nums=$str where id=$id """
+                        db.withConnection { implicit conn =>
+                            SQL""" update sets set nums=$str where id=$id """.execute()
                         }
                         Some(num) // Return the num if it was added
                     }
                 case None =>
-                    db.withConnection {
-                        SQL""" insert into sets values ($id,$num) """ // Create the set if it doesn't exist
+                    db.withConnection { implicit conn =>
+                        SQL""" insert into sets values ($id,$num) """.execute() // Create the set if it doesn't exist
                     }
                     Some(num)
             }
@@ -116,7 +117,7 @@ class GoofyRepoSQL @Inject()(db: DataBase, implicit ec: GoofyExecutionContext) e
 
     override def get(id: Int, num: Int): Future[Option[Int]] = {
         Future {
-            getSet(id).map( if(_(num)) Some(num) else None ).flatten
+            getSet(id).map( set => if(set(num)) Some(num) else None ).flatten
         }
     }
 }
