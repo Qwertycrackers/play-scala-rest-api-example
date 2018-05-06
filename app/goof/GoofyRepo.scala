@@ -10,6 +10,7 @@ import scala.collection.mutable.HashMap
 import scala.concurrent.{ExecutionContext, Future}
 import anorm._
 
+// As it turns out, using the repository dispatcher again is probably a good idea
 class GoofyExecutionContext @Inject()(actorSystem: ActorSystem) extends CustomExecutionContext(actorSystem, "repository.dispatcher")
 
 // Interface for my goofy backend, which is not a Set anymore
@@ -69,14 +70,53 @@ class GoofyRepoSQL @Inject()(db: DataBase, implicit ec: GoofyExecutionContext) e
         BitSet.empty ++ nums
     }
 
-    protected def getSet(id: Int): BitSet = {
+    private def stringify(set: Set): String = {
+       set,mkstring(" ")
+    } 
+
+    protected def getSet(id: Int): Option[BitSet] = {
         db.withConnection {
-            val str: String = SQL"""
-                select set from sets where id=$id
-                """.as(SQLParser.str("set").single)
+            val str: Option[String] = SQL"""
+                select nums from sets where id=$id
+                """.as(SQLParser.str("nums").singleOpt)
         }
-        unstringify(str) 
+        str.map(unstringify(_)) // May have problematic type issues where the None[String] doesn't map into a None[BitSet], but I think None does not have a type
     }
 
-    override def list(id: Int): Future[Iterable[Int]] {
-                
+    override def list(id: Int): Future[Iterable[Int]] = {
+        Future {
+            getSet(id) match {
+                case Some(set) => set
+                case None => BitSet.empty
+            }
+        }
+    }
+
+    override def add(id: Int, num: Int): Future[Option[Int]] = {
+        Future {
+            getSet(id).map( _ match {
+                case Some(set) => 
+                    if(set(num)) {
+                        None // If the number is there, we don't add it
+                    } else {
+                        val str = stringify(set + num)
+                        db.withConnection {
+                            SQL""" update sets set nums=$str where id=$id """
+                        }
+                        Some(num) // Return the num if it was added
+                    }
+                case None =>
+                    db.withConnection {
+                        SQL""" insert into sets values ($id,$num) """ // Create the set if it doesn't exist
+                    }
+                    Some(num)
+            }
+        }
+    }
+
+    override def get(id: Int, num: Int): Future[Option[Int]] = {
+        Future {
+            getSet(id).map( if(_(num)) Some(num) else None ).flatten
+        }
+    }
+}
