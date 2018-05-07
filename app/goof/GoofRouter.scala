@@ -13,13 +13,13 @@ class GoofRouter @Inject()(controller: GoofyController) extends SimpleRouter {
     override def routes: Routes = {
         case GET(p"/$id") => controller.list(id.toInt) // Now lists the numbers which are in the Set at $id
 
-        case GET(p"/$id/sum") => controller.sum(id)
+        case GET(p"/$id/sum") => controller.sum(id.toInt)
 
-        case GET(p"/$id/mean") => controller.mean(id)
+        case GET(p"/$id/product") => controller.product(id.toInt)
 
-        case GET(p"/$id/max") => controller.max(id)
+        case GET(p"/$id/max") => controller.max(id.toInt)
 
-        case GET(p"/$id/min") => controller.min(id)
+        case GET(p"/$id/min") => controller.min(id.toInt)
 
         case POST(p"/$id/$arg") => controller.add(id.toInt, arg.toInt) // post a number to that set
 

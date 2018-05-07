@@ -41,20 +41,20 @@ class GoofyController @Inject()(repo: GoofyRepo, services: GoofyServices) extend
         })
     }
     // This is more boilerplate than I like writing but I'm not going to make it more elegant. We're really just binding keywords here anyway
-    def sum(id: Int) = Action { implicit request =>
-        Ok(services.sum(id))
+    def sum(id: Int) = Action.async { implicit request =>
+        services.sum(id).map(num => Ok(Json.toJson(num)))
     }
 
-    def product(id: Int) = Action { implicit request =>
-        Ok(services.product(id))
+    def product(id: Int) = Action.async { implicit request =>
+        services.product(id).map(num => Ok(Json.toJson(num)))
     }
 
-    def max(id: Int) = Action { implicit request =>
-        Ok(services.max(id))
+    def max(id: Int) = Action.async { implicit request =>
+        services.max(id).map(num => Ok(Json.toJson(num)))
     }
 
-    def min(id: Int) = Action { implicit request =>
-        Ok(services.min(id))
+    def min(id: Int) = Action.async { implicit request =>
+        services.min(id).map(num => Ok(Json.toJson(num)))
     }
 }
 
