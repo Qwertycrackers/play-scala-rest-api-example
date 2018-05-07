@@ -17,5 +17,6 @@ class Module(environment: Environment, configuration: Configuration)
   override def configure() = {
     bind[PostRepository].to[PostRepositoryImpl].in[Singleton]
     bind[GoofyRepo].to[GoofyRepoSQL].in[Singleton] // runtime dependency injection at work
+    bind[GoofyServices].to[GoofyServicesImpl]
   }
 }
