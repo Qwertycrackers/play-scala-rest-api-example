@@ -7,7 +7,7 @@ import play.api.libs.json._
 import play.api.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class GoofyController @Inject()(repo: GoofyRepo) extends Controller { 
+class GoofyController @Inject()(repo: GoofyRepo, services: GoofyServices) extends Controller { 
     private val logger = Logger(getClass) // not certain how getClass works but I want to log things
 
     implicit val implicitJsInt = new Writes[Int] {
@@ -39,6 +39,22 @@ class GoofyController @Inject()(repo: GoofyRepo) extends Controller {
             case Some(num) => Ok(Json.toJson(num));
             case _ => NotFound(Json.toJson("Wasn't Found"));
         })
+    }
+    // This is more boilerplate than I like writing but I'm not going to make it more elegant. We're really just binding keywords here anyway
+    def sum(id: Int) = Action { implicit request =>
+        Ok(services.sum(id))
+    }
+
+    def product(id: Int) = Action { implicit request =>
+        Ok(services.product(id))
+    }
+
+    def max(id: Int) = Action { implicit request =>
+        Ok(services.max(id))
+    }
+
+    def min(id: Int) = Action { implicit request =>
+        Ok(services.min(id))
     }
 }
 
